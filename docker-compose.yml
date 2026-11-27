@@ -1,0 +1,50 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart_tenant_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_URL: http://localhost:8080
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: smart_tenant
+      DB_USERNAME: smart_tenant
+      DB_PASSWORD: secret
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smart_tenant_net
+
+  db:
+    image: mysql:8.0
+    container_name: smart_tenant_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: smart_tenant
+      MYSQL_USER: smart_tenant
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "smart_tenant", "-psecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    networks:
+      - smart_tenant_net
+
+volumes:
+  db_data:
+
+networks:
+  smart_tenant_net:
+    driver: bridge

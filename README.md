@@ -1,64 +1,152 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Smart Tenant SaaS (v2.4) - Bhadawala
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A multi-tenant Property, Tenant, and Rental Management SaaS built on Laravel 9 and PHP 8.2 with full Docker support.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Prerequisites
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Before starting, ensure you have the following installed on your machine:
+- **Git**
+- **Docker** (version 20.10+ or newer)
+- **Docker Compose** (v2 or `docker-compose`)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Quick Setup with Docker
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Follow these step-by-step instructions to clone, set up, and run the project using Docker:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 1. Clone the Repository
 
-## Laravel Sponsors
+```bash
+git clone https://github.com/me-engi/bhadawala.git
+cd bhadawala
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+*(If you already have the repository cloned, pull the latest changes:)*
+```bash
+git pull origin main
+```
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+### 2. Configure Environment (`.env`)
 
-## Contributing
+If `.env` does not exist, copy `.env.example`:
+```bash
+cp .env.example .env
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Ensure the database settings in your `.env` match the Docker Compose configuration:
+```dotenv
+APP_NAME='Smart Tenant SaaS'
+APP_ENV=local
+APP_KEY=base64:uKQANRMxI6UGKsL/XHzRG0BfgfP+bRjntzHBuPqNtQ4=
+APP_DEBUG=true
+APP_URL=http://localhost:8080
 
-## Code of Conduct
+DB_CONNECTION=mysql
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=smart_tenant
+DB_USERNAME=smart_tenant
+DB_PASSWORD=secret
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+### 3. Build & Start the Docker Containers
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Build the application image and run the containers in the background:
 
-## License
+```bash
+docker compose up -d --build
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Verify that the containers are healthy and running:
+```bash
+docker compose ps
+```
+You should see:
+- `smart_tenant_app`: running on port `8080` (`http://localhost:8080`)
+- `smart_tenant_db`: MySQL 8.0 running internally on port `3306`
+
+---
+
+### 4. Run Migrations & Seed Default Data
+
+Execute database migrations and populate the initial seeders (roles, permissions, admin accounts, and default templates):
+
+```bash
+docker compose exec app php artisan migrate --seed --force
+```
+
+---
+
+### 5. Mark Installation & Set Permissions
+
+Mark the application as installed so it doesn't redirect to the web installer wizard:
+
+```bash
+docker compose exec app bash -c "echo 'installed' > storage/installed"
+```
+
+Fix storage permissions and clear cached views:
+```bash
+docker compose exec app bash -c "chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache && php artisan cache:clear && php artisan view:clear"
+```
+
+---
+
+## Access the Application
+
+Open your browser and navigate to:
+👉 **[http://localhost:8080](http://localhost:8080)**
+
+Login page:
+👉 **[http://localhost:8080/login](http://localhost:8080/login)**
+
+### Default Credentials
+
+| Role | Email (Username) | Password |
+| :--- | :--- | :--- |
+| **Super Admin** | `superadmin@gmail.com` | `123456` |
+| **Property Owner** | `owner@gmail.com` | `123456` |
+| **Tenant** | `tenant@gmail.com` | `123456` |
+| **Manager** | `manager@gmail.com` | `123456` |
+| **Maintainer** | `maintainer@gmail.com` | `123456` |
+
+---
+
+## Useful Docker Commands
+
+- **Stop containers:**
+  ```bash
+  docker compose down
+  ```
+
+- **Restart containers:**
+  ```bash
+  docker compose restart
+  ```
+
+- **View real-time application logs:**
+  ```bash
+  docker compose logs -f app
+  ```
+
+- **View database logs:**
+  ```bash
+  docker compose logs -f db
+  ```
+
+- **Access application container shell:**
+  ```bash
+  docker compose exec app bash
+  ```
+
+- **Run Artisan commands inside container:**
+  ```bash
+  docker compose exec app php artisan <command>
+  ```
